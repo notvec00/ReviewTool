@@ -1,0 +1,142 @@
+:root {
+  --bg: #f5f6f8;
+  --panel: #ffffff;
+  --text: #1c1f24;
+  --muted: #6b7280;
+  --border: #d9dce1;
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+  --box: #16a34a;
+  --box-sel: #f59e0b;
+  --stage: #20242b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;
+    --panel: #1d2026;
+    --text: #e8eaee;
+    --muted: #9aa1ad;
+    --border: #333843;
+    --accent: #3b82f6;
+    --box: #4ade80;
+    --box-sel: #fbbf24;
+    --stage: #0c0d10;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+.hidden { display: none !important; }
+code { background: var(--bg); padding: 1px 4px; border-radius: 3px; }
+
+button {
+  font: inherit; color: var(--text); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+input[type=text], input:not([type]), select, textarea {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-width: 0; flex: 1;
+}
+ul.plain { list-style: none; margin: 0; padding: 0; }
+.small { font-size: 12px; color: var(--muted); }
+.row { display: flex; gap: 6px; }
+.col { display: flex; flex-direction: column; gap: 6px; }
+.center { justify-content: center; margin-top: 20px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+/* start + setup */
+.screen { max-width: 860px; margin: 0 auto; padding: 48px 16px; }
+.screen h1 { margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 28px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 20px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.card h2 { margin: 0 0 6px; font-size: 16px; }
+.card p { color: var(--muted); margin: 0 0 14px; }
+.card ul { margin-top: 12px; max-height: 220px; overflow: auto; }
+.card li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.card li button { padding: 0 8px; }
+
+/* editor */
+#editor { display: grid; grid-template-columns: 220px 1fr 280px; grid-template-rows: 44px minmax(0, 1fr); height: 100vh; }
+#topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+#topbar .home { font-weight: 700; font-size: 15px; border: 0; background: none; padding: 4px 8px; }
+#topbar .home:hover { color: var(--accent); }
+#left, #right { min-height: 0; background: var(--panel); padding: 12px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+#left { border-right: 1px solid var(--border); }
+#right { border-left: 1px solid var(--border); }
+.panel-title { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 6px; }
+#stage { position: relative; background: var(--stage); overflow: hidden; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#hud { position: absolute; left: 10px; bottom: 10px; color: #fff; background: #000a; padding: 3px 8px; border-radius: 4px; font-size: 12px; pointer-events: none; }
+#toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #111d; color: #fff; padding: 8px 14px; border-radius: 6px; max-width: 80%; }
+
+#imageList li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+#imageList li:hover { background: var(--bg); }
+#imageList li.active { border-color: var(--accent); background: var(--bg); }
+#imageList .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#imageList .n { color: var(--muted); }
+
+#labelList li , #cList li { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 4px; cursor: pointer; }
+#labelList li.active , #cList li.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+#labelList .key , #cList .key { color: var(--muted); font-size: 12px; width: 14px; }
+#labelList .name , #cList .name { flex: 1; }
+#labelList .x , #cList .x { border: 0; background: none; color: var(--muted); padding: 0 4px; }
+#counts div { display: flex; justify-content: space-between; }
+#counts .total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; font-weight: 600; }
+details { margin-top: 8px; }
+summary { cursor: pointer; color: var(--muted); }
+details ul { margin-top: 6px; }
+details li { margin-bottom: 4px; }
+
+.hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+.filelist li { gap: 8px; cursor: grab; border: 1px solid transparent; }
+.filelist li.over { border-top-color: var(--accent); }
+.filelist .grip { color: var(--muted); }
+.filelist .idx { color: var(--muted); width: 22px; text-align: right; }
+.filelist .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.mode.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.seg button { border: 0; border-radius: 0; padding: 8px 22px; }
+.seg button.active { background: var(--accent); color: var(--accent-text); }
+.badge { margin-left: auto; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+#reviewerBar select { width: 100%; }
+#feedbackPanel { flex: 1; display: flex; min-height: 0; }
+#feedbackText { flex: 1; width: 100%; resize: none; padding: 8px; }
+
+/* start menu */
+.menuwrap { position: relative; display: inline-block; }
+.menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; min-width: 190px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 4px; box-shadow: 0 6px 20px #0003; }
+.menu button { border: 0; text-align: left; padding: 8px 10px; }
+.menu button:hover, .menu button:focus-visible { background: var(--bg); outline: none; }
+
+/* classification */
+.tree { margin-top: 12px; max-height: 360px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+.tree .lbl { border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.tree .head { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.tree .head .name { flex: 1; }
+.tree .key { color: var(--muted); font-size: 12px; width: 14px; font-weight: 400; }
+.tree .x { border: 0; background: none; color: var(--muted); padding: 0 6px; }
+.tree .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.tree .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 1px 4px 1px 10px; }
+.tree .chip .x { padding: 0 4px; }
+.tree form { display: flex; gap: 6px; }
+.tree form input { padding: 3px 8px; }
+.tree form button { padding: 3px 10px; }
+#cList .sub { color: var(--muted); font-size: 12px; }
+#cList li.done .name::after { content: " ✓"; color: var(--box); }
+#cCurrent { font-weight: 600; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+#imageList .n.ok { color: var(--box); }
+#imageList .n.part { color: var(--box-sel); }
+
+/* comparing annotators */
+#cAnnots { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+#cAnnots div { display: flex; justify-content: space-between; gap: 8px; }
+#cAnnots .agree { color: var(--box); justify-content: flex-start; }
+#cAnnots .differ { color: var(--box-sel); justify-content: flex-start; }
+.annotName { max-width: 130px; }

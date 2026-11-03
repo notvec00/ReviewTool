@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewTool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 1. Start screen -->
+<section id="start" class="screen">
+  <h1>ReviewTool</h1>
+  <p class="sub">Bounding-box annotation and image classification. Runs entirely in your browser.</p>
+  <div class="seg" role="group" aria-label="Role">
+    <button id="roleAnnotator" class="active">Annotator</button>
+    <button id="roleReviewer">Reviewer</button>
+  </div>
+  <div class="cards">
+    <div class="card" id="cardNew">
+      <h2>Start new annotation</h2>
+      <p>Choose a task, import your images and define your labels.</p>
+      <div class="menuwrap">
+        <button id="btnNew" class="primary" aria-haspopup="menu" aria-expanded="false">Start new ▾</button>
+        <div id="newMenu" class="menu hidden" role="menu">
+          <button id="optBoxes" role="menuitem">Bounding boxes</button>
+          <button id="optClassify" role="menuitem">Classification</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Import annotation</h2>
+      <p>Select a <code>.json</code> annotation file together with its images to restore the work.</p>
+      <button id="btnImport" class="primary">Import annotation</button>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Setup screen (images + labels) -->
+<section id="setup" class="screen hidden">
+  <h1>New annotation</h1>
+  <div class="cards">
+    <div class="card">
+      <h2>1. Images</h2>
+      <button id="btnPickImages">Choose images…</button>
+      <p class="hint">Drag rows to set the order. The editor keeps this order.</p>
+      <ul id="setupImages" class="plain filelist"></ul>
+    </div>
+    <div class="card">
+      <h2>2. Labels</h2>
+      <form id="setupLabelForm" class="row">
+        <input id="setupLabelInput" placeholder="e.g. car" autocomplete="off">
+        <button>Add</button>
+      </form>
+      <ul id="setupLabels" class="plain"></ul>
+    </div>
+  </div>
+  <div class="row center">
+    <button id="btnSetupBack">Back</button>
+    <button id="btnSetupGo" class="primary" disabled>Open editor</button>
+  </div>
+</section>
+
+<!-- 2c. Classification setup (images + labels with sublabels) -->
+<section id="setupC" class="screen hidden">
+  <h1>New classification</h1>
+  <div class="cards">
+    <div class="card">
+      <h2>1. Images</h2>
+      <button id="btnPickImagesC">Choose images…</button>
+      <p class="hint">Drag rows to set the order. The editor keeps this order.</p>
+      <ul id="setupImagesC" class="plain filelist"></ul>
+    </div>
+    <div class="card">
+      <h2>2. Labels</h2>
+      <form id="setupLabelFormC" class="row">
+        <input id="setupLabelInputC" placeholder="e.g. vehicle" autocomplete="off">
+        <button>Add</button>
+      </form>
+      <div id="setupLabelsC" class="tree"></div>
+      <p class="hint">Each label can have sublabels (optional). In the editor, keys 1–9 pick a label and then one of its sublabels.</p>
+    </div>
+  </div>
+  <div class="row center">
+    <button id="btnSetupBackC">Back</button>
+    <button id="btnSetupGoC" class="primary" disabled>Open editor</button>
+  </div>
+</section>
+
+<!-- 2b. Import screen (json + images, separate) -->
+<section id="import" class="screen hidden">
+  <h1>Import annotation</h1>
+  <div class="cards">
+    <div class="card">
+      <h2>1. Annotation file(s)</h2>
+      <button id="btnPickJson">Choose .json…</button>
+      <p class="hint reviewerOnly">Reviewer: pick several classification files (one per annotator) to compare them. Each one is named in the CSV columns.</p>
+      <p id="importJsonInfo" class="hint">No file selected.</p>
+      <ul id="importJsonList" class="plain"></ul>
+    </div>
+    <div class="card">
+      <h2>2. Images</h2>
+      <button id="btnPickImportImages">Choose images…</button>
+      <p class="hint">Names must match the file names in the annotation file. The order is taken from the annotation file.</p>
+      <ul id="importImages" class="plain filelist"></ul>
+    </div>
+  </div>
+  <div class="row center">
+    <button id="btnImportBack">Back</button>
+    <button id="btnImportGo" class="primary" disabled>Open editor</button>
+  </div>
+</section>
+
+<!-- 3. Editor -->
+<section id="editor" class="hidden">
+  <header id="topbar">
+    <button id="btnHome" class="home" title="Back to start menu">ReviewTool</button>
+    <span class="small">← back to start menu</span>
+    <span id="roleBadge" class="badge"></span>
+  </header>
+  <aside id="left">
+    <div class="panel-title">Images</div>
+    <ul id="imageList" class="plain"></ul>
+    <button id="btnAddImages">+ Add images</button>
+  </aside>
+
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <div id="hud"></div>
+    <div id="toast" class="hidden"></div>
+  </main>
+
+  <aside id="right">
+    <div id="reviewerBar" class="hidden">
+      <select id="panelSelect" aria-label="Panel">
+        <option value="annotate">Annotate</option>
+        <option value="feedback">Feedback</option>
+      </select>
+    </div>
+
+    <div id="feedbackPanel" class="hidden">
+      <textarea id="feedbackText" placeholder="Write feedback for this image…"></textarea>
+    </div>
+
+    <div id="annotatePanel" class="stack">
+    <div class="panel-title">Labels</div>
+    <ul id="labelList" class="plain"></ul>
+    <form id="labelForm" class="row">
+      <input id="labelInput" placeholder="New label" autocomplete="off">
+      <button>Add</button>
+    </form>
+
+    <div class="panel-title">Current image</div>
+    <div id="counts"></div>
+
+    <div class="panel-title">Tools</div>
+    <div class="grid">
+      <button id="btnAnnotate" class="mode" title="Draw boxes (A)">Annotate</button>
+      <button id="btnSelect" class="mode" title="Select, move and resize boxes (S)">Select</button>
+      <button id="btnUndo">Undo</button>
+      <button id="btnRedo">Redo</button>
+      <button id="btnDelete">Delete box</button>
+      <button id="btnFit">Fit view</button>
+      <button id="btnPrev">← Prev</button>
+      <button id="btnNext">Next →</button>
+    </div>
+
+    <div class="panel-title">Files</div>
+    <div class="col">
+      <button id="btnExportJson" class="primary">Export annotations (.json)</button>
+      <button id="btnExportCsv" class="primary">Export counts (.csv)</button>
+      <button id="btnImportJson">Import annotations…</button>
+      <button id="btnExportFeedback" class="primary hidden">Export feedback (.csv)</button>
+    </div>
+
+    <details>
+      <summary>Shortcuts</summary>
+      <ul class="plain small">
+        <li><b>A</b> Annotate mode: drag to draw a box</li>
+        <li><b>S</b> Select mode: click a box to select · drag to move, drag handles to resize</li>
+        <li><b>1–9</b>: choose label (also relabels selected box)</li>
+        <li><b>Del</b>: delete · <b>Ctrl/⌘+Z</b>: undo · <b>Shift+Ctrl/⌘+Z</b>: redo</li>
+        <li><b>Wheel</b>: zoom · <b>Space+drag</b> / middle button: pan · <b>F</b>: fit</li>
+        <li><b>← →</b>: previous / next image</li>
+      </ul>
+    </details>
+    </div>
+
+    <div id="classifyPanel" class="stack hidden">
+      <div class="panel-title" id="cCrumb">Labels</div>
+      <button id="cBack" class="hidden">← Back to labels (Backspace)</button>
+      <ul id="cList" class="plain"></ul>
+      <button id="cDone" class="primary hidden">Done (Enter)</button>
+      <form id="cForm" class="row">
+        <input id="cInput" placeholder="New label" autocomplete="off">
+        <button>Add</button>
+      </form>
+
+      <div id="cAnnots" class="hidden"></div>
+
+      <div class="panel-title">Current image</div>
+      <div id="cCurrent"></div>
+      <div id="cProgress" class="small"></div>
+      <label class="check"><input type="checkbox" id="cAuto" checked> Go to next image on Done</label>
+      <div class="grid">
+        <button id="btnCPrev">← Prev</button>
+        <button id="btnCNext">Next →</button>
+        <button id="btnCClear">Clear (Del)</button>
+        <button id="btnCFit">Fit view</button>
+      </div>
+
+      <div class="panel-title">Files</div>
+      <div class="col">
+        <button id="btnCExportJson" class="primary">Export classification (.json)</button>
+        <button id="btnCExportCsv" class="primary">Export classification (.csv)</button>
+        <button id="btnCImportJson">Import classification…</button>
+        <button id="btnCExportFeedback" class="primary hidden">Export feedback (.csv)</button>
+        <button id="btnCExportCompare" class="primary hidden">Export original vs reviewed (.csv)</button>
+        <button id="btnCExportAnnotators" class="primary hidden">Export annotators vs reviewer (.csv)</button>
+      </div>
+
+      <details>
+        <summary>Shortcuts</summary>
+        <ul class="plain small">
+          <li><b>1–9</b>: choose a label, then toggle any of its sublabels</li>
+          <li><b>Enter</b>: finish this image (after picking sublabels)</li>
+          <li><b>Backspace / Esc</b>: back to the label list</li>
+          <li><b>Del</b>: clear this image's classification</li>
+          <li><b>← →</b>: previous / next image</li>
+          <li><b>Wheel</b>: zoom · <b>Space+drag</b> / middle button: pan · <b>F</b>: fit</li>
+        </ul>
+      </details>
+    </div>
+  </aside>
+</section>
+
+<input id="fileImages" type="file" accept="image/*" multiple hidden>
+<input id="fileJsonImport" type="file" accept="application/json,.json" multiple hidden>
+<input id="fileJson" type="file" accept="application/json,.json" hidden>
+
+<script src="app.js"></script>
+</body>
+</html>
